@@ -19,7 +19,7 @@ player.CharacterAdded:Connect(function(newCharacter)
 end)
  
 local isFlying = false
-local speed = 10 
+local speed = 1
 local moveUp = false
 local moveDown = false
  
@@ -46,7 +46,7 @@ titleBar.Size = UDim2.new(0.5, 0, 0.5, 0)
 titleBar.Position = UDim2.new(0.5, 0, 0, 0)
 titleBar.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
 titleBar.BorderSizePixel = 0
-titleBar.Text = "Ultra Fly V5.0"
+titleBar.Text = "Ultra Fly V5.0Ω"
 titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleBar.TextXAlignment = Enum.TextXAlignment.Left
 titleBar.Font = Enum.Font.SourceSansBold
@@ -154,17 +154,46 @@ local function disableFly()
 	flyButton.Text = "Fly"
 	flyButton.BackgroundColor3 = Color3.fromRGB(255, 128, 64)
 	
-	if character then
-		local hum = character:FindFirstChildOfClass("Humanoid")
-		if hum then hum.PlatformStand = false end
-		if character:FindFirstChild("Animate") then character.Animate.Disabled = false end
+	local seat = getVehiclePart()
+	local torso = getPlayerTorso()
+	
+	-- 🌟【精準重置車子物理】
+	if seat and seat:IsA("BasePart") then
+		seat.RotVelocity = Vector3.new(0, 0, 0)
+		local root = seat:GetRootPart()
+		if root then
+			root.RotVelocity = Vector3.new(0, 0, 0)
+		end
+		
+		-- 🎯 只刪除車子身上的飛行組件
+		local bv = seat:FindFirstChild("FlyVelocity")
+		if bv then bv:Destroy() end
+		local bg = seat:FindFirstChild("FlyGyro")
+		if bg then bg:Destroy() end
 	end
 	
-	for _, desc in ipairs(workspace:GetDescendants()) do
-		if desc.Name == "FlyGyro" or desc.Name == "FlyVelocity" then
-			desc:Destroy()
-		end
+	-- 🌟【精準重置角色物理】
+	if torso and torso:IsA("BasePart") then
+		torso.RotVelocity = Vector3.new(0, 0, 0)
+		
+		-- 🎯 只刪除人身上的飛行組件
+		local bv = torso:FindFirstChild("FlyVelocity")
+		if bv then bv:Destroy() end
+		local bg = torso:FindFirstChild("FlyGyro")
+		if bg then bg:Destroy() end
 	end
+	
+	-- ❌ 【徹底刪除！】原本的 workspace:GetDescendants() 迴圈被我們拔掉了
+	-- 這樣就不會在大地圖中造成任何瞬間卡頓！
+
+	-- 🌟【絲滑降落】：延遲一影格再讓動畫與物理交接，防止拉扯鏡頭
+	task.defer(function()
+		if character then
+			local hum = character:FindFirstChildOfClass("Humanoid")
+			if hum then hum.PlatformStand = false end
+			if character:FindFirstChild("Animate") then character.Animate.Disabled = false end
+		end
+	end)
 end
 
 local function applyPhysics(target)
@@ -207,8 +236,8 @@ flyButton.MouseButton1Click:Connect(function()
 	end
 end)
  
-flyupButton.MouseButton1Click:Connect(function() speed = speed + 2 contentText.Text = tostring(speed) end)
-flydownButton.MouseButton1Click:Connect(function() speed = math.max(speed - 2, 1) contentText.Text = tostring(speed) end)
+flyupButton.MouseButton1Click:Connect(function() speed = speed + 1 contentText.Text = tostring(speed) end)
+flydownButton.MouseButton1Click:Connect(function() speed = math.max(speed - 1, 1) contentText.Text = tostring(speed) end)
  
 -- Up/Down 按鈕狀態
 upButton.InputBegan:Connect(function(input) if isFlying and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then moveUp = true upButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0) end end)
@@ -251,12 +280,12 @@ RunService.RenderStepped:Connect(function()
 		if UserInputService:IsKeyDown(Enum.KeyCode.A) then customMoveDir = customMoveDir - cameraRight isMoving = true end
 		if UserInputService:IsKeyDown(Enum.KeyCode.D) then customMoveDir = customMoveDir + cameraRight isMoving = true end
 		
-		-- 2. 🌟 手機虛擬搖桿支援 🌟 (加回判定，並將前進與左右力道乘以 -1 全面反轉對齊)
+		-- 2. 手機虛擬搖桿支援
 		local hum = character:FindFirstChildOfClass("Humanoid")
 		if not isMoving and hum and hum.MoveDirection.Magnitude > 0 then
 			local forwardProj = hum.MoveDirection:Dot(camera.CoordinateFrame.RightVector:Cross(Vector3.new(0,1,0)))
 			local rightProj = hum.MoveDirection:Dot(camera.CoordinateFrame.RightVector)
-			customMoveDir = (cameraLook * (0 - forwardProj)) + (cameraRight * rightProj)
+			customMoveDir = -(cameraLook * forwardProj) + (cameraRight * rightProj)
 			isMoving = true
 		end
 		
@@ -265,7 +294,7 @@ RunService.RenderStepped:Connect(function()
 			flyVelocity = customMoveDir.Unit * (speed * 60)
 		end
 		
-		-- 絕對世界高度修正 (Up / Down)
+		-- 絕對世界高度修正
 		if moveUp then
 			flyVelocity = flyVelocity + Vector3.new(0, (speed * 40) + 50, 0)
 		elseif moveDown then
@@ -288,7 +317,7 @@ RunService.RenderStepped:Connect(function()
 end)
 				
 ---------------------------------------------------
--- 🛠️ 你的超絲滑全局完美拖曳邏輯
+-- 🛠️ 完美的絲滑拖曳邏輯 (已移除錯字 vibrancy)
 ---------------------------------------------------
 local dragging = false
 local dragStart = nil
