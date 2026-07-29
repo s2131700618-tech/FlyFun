@@ -1,3 +1,7 @@
+-- =============================================================================
+-- FlyGui V3 完美自然飛行版（去除僵直懸空姿勢）
+-- =============================================================================
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -204,7 +208,7 @@ local function applyPhysics(target)
 	local bv = Instance.new("BodyVelocity")
 	bv.Name = "FlyVelocity"
 	bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
-local flyVelocity = Vector3.new(0, 0, 0)
+	bv.velocity = Vector3.new(0, 0.1, 0)
 	bv.Parent = target
 end
 
@@ -310,7 +314,7 @@ RunService.RenderStepped:Connect(function()
 				isMoving = true
 			end
 			
-			local flyVelocity = Vector3.new(0, 0.1, 0)
+			local flyVelocity = Vector3.new(0, 0, 0)
 			if isMoving and customMoveDir.Magnitude > 0 then
 				flyVelocity = customMoveDir.Unit * (speed * 60)
 			end
