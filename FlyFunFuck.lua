@@ -1,7 +1,3 @@
--- =============================================================================
--- FlyGui V3 完美修復版：解決「按停止時人會從車上脫離」的問題
--- =============================================================================
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -26,12 +22,12 @@ local moveUp = false
 local moveDown = false
  
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "UltraFlyGuiV3_NoSeatEjectFixed"
+screenGui.Name = "UltraFlyGuiV3_NaturalFly"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
  
 ---------------------------------------------------
--- UI 介面 (所有按鈕完好如初)
+-- UI 介面
 ---------------------------------------------------
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
@@ -48,7 +44,7 @@ titleBar.Size = UDim2.new(0.5, 0, 0.5, 0)
 titleBar.Position = UDim2.new(0.5, 0, 0, 0)
 titleBar.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
 titleBar.BorderSizePixel = 0
-titleBar.Text = "UltraSelf! Fly V3μΩ"
+titleBar.Text = "FlyGui V3.2μΩ"
 titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleBar.TextXAlignment = Enum.TextXAlignment.Left
 titleBar.Font = Enum.Font.SourceSansBold
@@ -148,7 +144,7 @@ local function getVehicleSeat()
 end
 
 ---------------------------------------------------
--- 🛠️ 核心關閉飛行（🌟 徹底修復：按停止不脫離座位）
+-- 🛠️ 關閉飛行
 ---------------------------------------------------
 local function disableFly()
 	isFlying = false
@@ -162,7 +158,6 @@ local function disableFly()
 	local seat = getVehicleSeat()
 	local torso = getPlayerTorso()
 	
-	-- 1. 清除車座上的飛行物理力
 	if seat then
 		local bv = seat:FindFirstChild("FlyVelocity")
 		if bv then bv:Destroy() end
@@ -170,7 +165,6 @@ local function disableFly()
 		if bg then bg:Destroy() end
 	end
 	
-	-- 2. 清除人體上的飛行物理力
 	if torso then
 		local bv = torso:FindFirstChild("FlyVelocity")
 		if bv then bv:Destroy() end
@@ -178,17 +172,14 @@ local function disableFly()
 		if bg then bg:Destroy() end
 	end
 	
-	-- 3. 🌟 【關鍵修復】防止解除 PlatformStand 時人被彈出座位
 	if character then
 		local hum = character:FindFirstChildOfClass("Humanoid")
 		if hum then 
 			hum.PlatformStand = false
-			-- 如果原本就在車上，強力鎖定讓人「坐好」，絕對不觸發跳出
 			if seat then
 				task.wait(0.02)
 				seat:Sit(hum) 
 			else
-				-- 走路飛行解除時才給 Freefall 落地
 				hum:ChangeState(Enum.HumanoidStateType.Freefall)
 			end
 		end
@@ -196,7 +187,7 @@ local function disableFly()
 end
 
 ---------------------------------------------------
--- 🛠️ 啟用飛行物理主推力
+-- 🛠️ 啟用飛行
 ---------------------------------------------------
 local function applyPhysics(target)
 	if not target then return end
@@ -213,7 +204,7 @@ local function applyPhysics(target)
 	local bv = Instance.new("BodyVelocity")
 	bv.Name = "FlyVelocity"
 	bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
-	bv.velocity = Vector3.new(0, 0.1, 0)
+local flyVelocity = Vector3.new(0, 0, 0)
 	bv.Parent = target
 end
 
@@ -224,13 +215,7 @@ flyButton.MouseButton1Click:Connect(function()
 		flyButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
 		
 		local seat = getVehicleSeat()
-		local hum = character:FindFirstChildOfClass("Humanoid")
-		
-		-- 🌟 坐在車上飛行時，絕對不要開啟 PlatformStand，否則會破壞座位銲接
-		if hum and not seat then 
-			hum.PlatformStand = true 
-		end
-		
+		-- 🚀 取消 PlatformStand，讓角色肢體保持自然狀態，不會像木頭人一樣僵直懸空！
 		if seat then applyPhysics(seat) else applyPhysics(getPlayerTorso()) end
 	else
 		disableFly()
@@ -268,7 +253,6 @@ RunService.RenderStepped:Connect(function()
 		local seat = getVehicleSeat()
 		local torso = getPlayerTorso()
 		
-		-- 車子飛行邏輯
 		if seat then
 			local bg = seat:FindFirstChild("FlyGyro")
 			local bv = seat:FindFirstChild("FlyVelocity")
@@ -303,7 +287,6 @@ RunService.RenderStepped:Connect(function()
 			bv.velocity = flyVelocity
 			bg.cframe = camera.CoordinateFrame
 			
-		-- 走路人體飛行邏輯
 		elseif torso then
 			local bg = torso:FindFirstChild("FlyGyro")
 			local bv = torso:FindFirstChild("FlyVelocity")
@@ -337,21 +320,12 @@ RunService.RenderStepped:Connect(function()
 			
 			bv.velocity = flyVelocity
 			bg.cframe = camera.CoordinateFrame
-			
-			if character then
-				for _, part in ipairs(character:GetChildren()) do
-					if part:IsA("BasePart") then
-						part.Velocity = flyVelocity
-						part.RotVelocity = Vector3.new(0,0,0)
-					end
-				end
-			end
 		end
 	end
 end)
 				
 ---------------------------------------------------
--- 絲滑拖曳邏輯
+-- 拖曳邏輯
 ---------------------------------------------------
 local dragging = false
 local dragStart = nil
