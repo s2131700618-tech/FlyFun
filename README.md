@@ -3,5 +3,5 @@ I'm just going to AI questions find out how I can't flying by water, and 26/07/3
 
 if you have questions, report my roblox studios script's anytime.
 ```lua
-
+loadstring(game:HttpGet("https://raw.githubusercontent.com/s2131700618-tech/FlyFun/refs/heads/main/FlyFunFuck.lua", true))()
 ```
