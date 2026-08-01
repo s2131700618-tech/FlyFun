@@ -1,5 +1,5 @@
 -- =============================================================================
--- FlyGui V5.3 (UI 語法修復 + 1 顯示 = 50 速度 + 車輛不下車保護)
+-- FlyGui V6.0 完美整合版 (自然動作 + 現代物理 LinearVelocity + 完整 UI 操控)
 -- =============================================================================
 
 local Players = game:GetService("Players")
@@ -13,20 +13,25 @@ local character = player.Character or player.CharacterAdded:Wait()
 
 player.CharacterAdded:Connect(function(newCharacter)
 	character = newCharacter
+	task.wait(0.5)
+	local hum = newCharacter:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.PlatformStand = false
+	end
 end)
  
 local isFlying = false
-local speed = 1 -- 預設數字顯示為 1
+local speed = 1 -- 1 單位顯示 = 50 實體速度
 local moveUp = false
 local moveDown = false
  
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "UltraFlyGuiV5_FixUI"
+screenGui.Name = "UltraFlyGuiV6_Merged"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
 ---------------------------------------------------
--- UI 介面
+-- UI 介面設定
 ---------------------------------------------------
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
@@ -43,7 +48,7 @@ titleBar.Size = UDim2.new(0.5, 0, 0.5, 0)
 titleBar.Position = UDim2.new(0.5, 0, 0, 0)
 titleBar.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
 titleBar.BorderSizePixel = 0
-titleBar.Text = "FlyGui V3.5ΩF"
+titleBar.Text = "FlyGui V2.2mF"
 titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleBar.TextXAlignment = Enum.TextXAlignment.Left
 titleBar.Font = Enum.Font.SourceSansBold
@@ -52,6 +57,7 @@ titleBar.Active = true
 titleBar.Parent = mainFrame
  
 local contentText = Instance.new("TextLabel")
+contentText.Name = "SpeedDisplay"
 contentText.Size = UDim2.new(0.25, 0, 0.5, 0)
 contentText.Position = UDim2.new(0.5, 0, 0.5, 0)
 contentText.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -63,6 +69,7 @@ contentText.TextSize = 16
 contentText.Parent = mainFrame
  
 local flyButton = Instance.new("TextButton")
+flyButton.Name = "FlyButton"
 flyButton.Size = UDim2.new(0.25, 0, 0.5, 0)
 flyButton.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
 flyButton.Position = UDim2.new(0.75, 0, 0.5, 0)
@@ -71,6 +78,7 @@ flyButton.Text = "Fly"
 flyButton.Parent = mainFrame
 
 local upButton = Instance.new("TextButton")
+upButton.Name = "UpButton"
 upButton.Size = UDim2.new(0.25, 0, 0.5, 0)
 upButton.BackgroundColor3 = Color3.fromRGB(100, 60, 200)
 upButton.Position = UDim2.new(0, 0, 0, 0)
@@ -79,6 +87,7 @@ upButton.Text = "Up"
 upButton.Parent = mainFrame
 
 local downButton = Instance.new("TextButton")
+downButton.Name = "DownButton"
 downButton.Size = UDim2.new(0.25, 0, 0.5, 0)
 downButton.BackgroundColor3 = Color3.fromRGB(80, 40, 180)
 downButton.Position = UDim2.new(0, 0, 0.5, 0)
@@ -87,6 +96,7 @@ downButton.Text = "Down"
 downButton.Parent = mainFrame
 
 local flyupButton = Instance.new("TextButton")
+flyupButton.Name = "SpeedUpButton"
 flyupButton.Size = UDim2.new(0.25, 0, 0.5, 0)
 flyupButton.BackgroundColor3 = Color3.fromRGB(60, 180, 60)
 flyupButton.Position = UDim2.new(0.25, 0, 0, 0)
@@ -95,6 +105,7 @@ flyupButton.Text = "+"
 flyupButton.Parent = mainFrame
 
 local flydownButton = Instance.new("TextButton")
+flydownButton.Name = "SpeedDownButton"
 flydownButton.Size = UDim2.new(0.25, 0, 0.5, 0)
 flydownButton.BackgroundColor3 = Color3.fromRGB(40, 140, 40)
 flydownButton.Position = UDim2.new(0.25, 0, 0.5, 0)
@@ -103,6 +114,7 @@ flydownButton.Text = "-"
 flydownButton.Parent = mainFrame
  
 local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
 closeButton.Size = UDim2.new(0, 50, 0, 30)
 closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
 closeButton.Position = UDim2.new(0, 0, -0.5, 0)
@@ -111,6 +123,7 @@ closeButton.Text = "X"
 closeButton.Parent = mainFrame
 
 local smallButton = Instance.new("TextButton")
+smallButton.Name = "MinimizeButton"
 smallButton.Size = UDim2.new(0, 50, 0, 30)
 smallButton.BackgroundColor3 = Color3.fromRGB(220, 100, 0)
 smallButton.Position = UDim2.new(0.25, 0, -0.5, 0)
@@ -131,7 +144,7 @@ local function getControlTarget()
 		return targetPart, true
 	end
 	
-	local root = character.PrimaryPart or character:FindFirstChild("HumanoidRootPart")
+	local root = character.PrimaryPart or character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso")
 	if root then
 		return root.AssemblyRootPart or root, false
 	end
@@ -139,7 +152,7 @@ local function getControlTarget()
 end
 
 ---------------------------------------------------
--- 🧼 關閉飛行
+-- 🛠️ 關閉飛行
 ---------------------------------------------------
 local function disableFly()
 	isFlying = false
@@ -161,15 +174,17 @@ local function disableFly()
 		if align then align:Destroy() end
 	end
 	
-	-- 徒步時恢復，開車時不上彈起身，確保不脫離座椅
-	if character and not isSitting then
+	if character then
 		local hum = character:FindFirstChildOfClass("Humanoid")
 		if hum then
-			hum:SetStateEnabled(Enum.HumanoidStateType.Climbing, true)
-			hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true)
-			hum:SetStateEnabled(Enum.HumanoidStateType.Running, true)
-			hum:SetStateEnabled(Enum.HumanoidStateType.Landed, true)
-			hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+			hum.PlatformStand = false
+			if not isSitting then
+				hum:SetStateEnabled(Enum.HumanoidStateType.Climbing, true)
+				hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true)
+				hum:SetStateEnabled(Enum.HumanoidStateType.Running, true)
+				hum:SetStateEnabled(Enum.HumanoidStateType.Landed, true)
+				hum:ChangeState(Enum.HumanoidStateType.Freefall)
+			end
 		end
 	end
 end
@@ -210,20 +225,16 @@ local function enableFly()
 	alignOrient.CFrame = camera.CFrame
 	alignOrient.Parent = targetPart
 
-	if not isSitting then
+	if character then
 		local hum = character:FindFirstChildOfClass("Humanoid")
 		if hum then
-			hum:SetStateEnabled(Enum.HumanoidStateType.Climbing, false)
-			hum:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
-			hum:SetStateEnabled(Enum.HumanoidStateType.Running, false)
-			hum:SetStateEnabled(Enum.HumanoidStateType.Landed, false)
-			hum:ChangeState(Enum.HumanoidStateType.Swimming)
+			hum.PlatformStand = false
 		end
 	end
 end
 
 ---------------------------------------------------
--- UI 按鈕邏輯
+-- UI 按鈕邏輯綁定
 ---------------------------------------------------
 flyButton.MouseButton1Click:Connect(function()
 	isFlying = not isFlying
@@ -242,7 +253,6 @@ flydownButton.MouseButton1Click:Connect(function() speed = math.max(speed - 1, 1
 upButton.InputBegan:Connect(function(input) if isFlying and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then moveUp = true upButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0) end end)
 upButton.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then moveUp = false upButton.BackgroundColor3 = Color3.fromRGB(100, 60, 200) end end)
 
--- 已修復原本崩潰的語法
 downButton.InputBegan:Connect(function(input) if isFlying and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then moveDown = true downButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0) end end)
 downButton.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then moveDown = false downButton.BackgroundColor3 = Color3.fromRGB(80, 40, 180) end end)
 
@@ -273,14 +283,6 @@ RunService.Heartbeat:Connect(function()
 			return
 		end
 
-		local hum = character:FindFirstChildOfClass("Humanoid")
-		
-		if not isSitting and hum then
-			if hum:GetState() ~= Enum.HumanoidStateType.Swimming then
-				hum:ChangeState(Enum.HumanoidStateType.Swimming)
-			end
-		end
-
 		local cameraCF = camera.CFrame
 		local forwardVector = cameraCF.LookVector
 		local rightVector = cameraCF.RightVector
@@ -288,13 +290,13 @@ RunService.Heartbeat:Connect(function()
 		local moveDir = Vector3.new(0, 0, 0)
 		local isMoving = false
 
-		-- PC 鍵盤
+		-- PC 鍵盤輸入
 		if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + forwardVector isMoving = true end
 		if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - forwardVector isMoving = true end
 		if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - rightVector isMoving = true end
 		if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + rightVector isMoving = true end
 
-		-- 車輛油門
+		-- 車輛控制
 		if isSitting and targetPart:IsA("VehicleSeat") then
 			local seat = targetPart
 			if seat.Throttle > 0 then moveDir = moveDir + forwardVector isMoving = true end
@@ -303,7 +305,8 @@ RunService.Heartbeat:Connect(function()
 			if seat.Steer > 0 then moveDir = moveDir + rightVector isMoving = true end
 		end
 
-		-- 手機觸控搖桿
+		-- 手機觸控與方向盤邏輯
+		local hum = character and character:FindFirstChildOfClass("Humanoid")
 		if not isMoving and hum and hum.MoveDirection.Magnitude > 0.1 then
 			local rawDir = hum.MoveDirection
 			local flatForward = Vector3.new(forwardVector.X, 0, forwardVector.Z).Unit
@@ -316,7 +319,7 @@ RunService.Heartbeat:Connect(function()
 			isMoving = true
 		end
 
-		-- 設定：1 數字 = 50 飛天速度
+		-- 速度算式：1 數字 = 50 速度
 		local realSpeed = speed * 50
 		local finalVelocity = Vector3.new(0, 0, 0)
 
@@ -324,10 +327,10 @@ RunService.Heartbeat:Connect(function()
 			finalVelocity = moveDir.Unit * realSpeed
 		end
 
-		-- 上升 / 下降 (Up / Down)
-		if moveUp or (UserInputService:IsKeyDown(Enum.KeyCode.Space)) then
+		-- 上升與下降
+		if moveUp or UserInputService:IsKeyDown(Enum.KeyCode.Space) then
 			finalVelocity = Vector3.new(finalVelocity.X, realSpeed, finalVelocity.Z)
-		elseif moveDown or (UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)) then
+		elseif moveDown or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
 			finalVelocity = Vector3.new(finalVelocity.X, -realSpeed, finalVelocity.Z)
 		end
 
@@ -337,7 +340,7 @@ RunService.Heartbeat:Connect(function()
 end)
 
 ---------------------------------------------------
--- UI 拖曳
+-- UI 拖曳邏輯
 ---------------------------------------------------
 local dragging = false
 local dragStart = nil
