@@ -2,8 +2,6 @@
 -- FlyGui V2.2μΩ (車身角度完美同步鏡頭 + 鏡頭方向自由飛行版)
 -- =============================================================================
 
-print("🚀 FlyGui V8.5 正在初始化...")
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -18,8 +16,9 @@ local playerGui = player:WaitForChild("PlayerGui", 999)
 local camera = workspace.CurrentCamera
 local character = player.Character or player.CharacterAdded:Wait()
 
-local oldGui = playerGui:FindFirstChild("UltraFlyGuiV8_5")
-if oldGui then oldGui:Destroy() end
+-- Bug fixed
+-- local oldGui = playerGui:FindFirstChild("UltraFlyGuiV8_5")
+-- if oldGui then oldGui:Destroy() end
 
 player.CharacterAdded:Connect(function(newCharacter)
 	character = newCharacter
