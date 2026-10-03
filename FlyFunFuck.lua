@@ -228,7 +228,7 @@ local function setupFlyPhysics()
 		local bv = Instance.new("BodyVelocity")
 		bv.Name = "FlyVelocity"
 		bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
-		bv.velocity = Vector3.new(0, 0.1, 0)
+		bv.velocity = Vector3.new(0, 0, 0)
 		bv.Parent = seat
 	else
 		local torso = getTorso()
@@ -244,7 +244,7 @@ local function setupFlyPhysics()
 		local bv = Instance.new("BodyVelocity")
 		bv.Name = "FlyVelocity"
 		bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
-		bv.velocity = Vector3.new(0, 0.1, 0)
+		bv.velocity = Vector3.new(0, 0, 0)
 		bv.Parent = torso
 	end
 end
@@ -351,16 +351,19 @@ RunService.Heartbeat:Connect(function()
 		isMoving = true
 	end
 
-	local flyVel = Vector3.new(0, 0.1, 0)
+	local flyVel = Vector3.new(0, 0, 0)
 	if isMoving and moveDir.Magnitude > 0 then
 		flyVel = moveDir.Unit * realSpeed
 	end
 
+	local verticalSpeed = 0
 	if moveUp or UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-		flyVel = Vector3.new(flyVel.X + (cameraLook.Y * realSpeed), flyVel.Y + realSpeed, flyVel.Z)
+		verticalSpeed = realSpeed
 	elseif moveDown or UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-		flyVel = Vector3.new(flyVel.X - (cameraLook.Y * realSpeed), flyVel.Y - realSpeed, flyVel.Z)
+		verticalSpeed = -realSpeed
 	end
+
+	flyVel = Vector3.new(flyVel.X, verticalSpeed + flyVel.Y, flyVel.Z)
 
 	bv.velocity = flyVel
 	bg.cframe = cameraCF
