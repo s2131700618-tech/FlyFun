@@ -200,18 +200,41 @@ local function setupFlyPhysics()
 	local seat = getVehicleSeat()
 	local cameraCF = camera.CFrame
 	
-	-- 讓角色進入懸浮狀態，防止地面磨擦力和重力干擾
-	if character then
-		local hum = character:FindFirstChildOfClass("Humanoid")
-		if hum then 
-			hum.PlatformStand = true 
-		end
-	end
-	
 	if seat then
-		-- (原本的載具焊接與 BodyGyro / BodyVelocity 程式碼保持不動)
-		-- ...
+		-- 確保車輛所有零件都解鎖（Unanchored）並牢牢焊接給駕駛座
+		local model = seat:FindFirstAncestorOfClass("Model")
+		if model then
+			for _, part in ipairs(model:GetDescendants()) do
+				if part:IsA("BasePart") and part ~= seat then
+					part.Anchored = false -- 防止零件被鎖死在原地
+					local weld = Instance.new("WeldConstraint")
+					weld.Name = "FlyWeld"
+					weld.Part0 = seat
+					weld.Part1 = part
+					weld.Parent = seat
+				end
+			end
+		end
+
+		local bg = Instance.new("BodyGyro")
+		bg.Name = "FlyGyro"
+		bg.P = 1e5
+		bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+		bg.cframe = cameraCF
+		bg.Parent = seat
+		
+		local bv = Instance.new("BodyVelocity")
+		bv.Name = "FlyVelocity"
+		bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+		bv.velocity = Vector3.new(0, 0.1, 0)
+		bv.Parent = seat
 	else
+		-- 角色本體飛行模式
+		if character then
+			local hum = character:FindFirstChildOfClass("Humanoid")
+			if hum then hum.PlatformStand = true end
+		end
+		
 		local torso = getTorso()
 		if not torso then return end
 		
