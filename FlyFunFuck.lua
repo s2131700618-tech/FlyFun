@@ -364,8 +364,7 @@ RunService.Heartbeat:Connect(function()
 		isMoving = true
 	end
 
-	-- 2. 建立基礎速度（微量浮空避免掉落）
-	local finalVelocity = Vector3.new(0, 0.1, 0)
+	local finalVelocity = Vector3.new(0, 0, 0)
 	
 	-- 疊加 WASD 移動向量
 	if isMoving and moveDir.Magnitude > 0 then
