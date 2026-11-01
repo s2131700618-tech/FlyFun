@@ -87,7 +87,7 @@ upButton.Size = UDim2.new(0.25, 0, 0.5, 0)
 upButton.BackgroundColor3 = Color3.fromRGB(100, 60, 200)
 upButton.Position = UDim2.new(0, 0, 0, 0)
 upButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-upButton.Text = "UP"
+upButton.Text = "Up"
 upButton.Parent = mainFrame
 
 local downButton = Instance.new("TextButton")
@@ -96,7 +96,7 @@ downButton.Size = UDim2.new(0.25, 0, 0.5, 0)
 downButton.BackgroundColor3 = Color3.fromRGB(80, 40, 180)
 downButton.Position = UDim2.new(0, 0, 0.5, 0)
 downButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-downButton.Text = "DOW"
+downButton.Text = "Down"
 downButton.Parent = mainFrame
 
 local flyupButton = Instance.new("TextButton")
